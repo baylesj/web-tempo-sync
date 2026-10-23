@@ -1,0 +1,332 @@
+<pre class='metadata'>
+Title: Web Tempo Sync
+Shortname: web-tempo-sync
+Level: 1
+Status: CG-DRAFT
+Group: WICG
+ED: https://baylesj.github.io/web-tempo-sync/
+Repository: baylesj/web-tempo-sync
+Editor: Jordan Bayles, Google, baylesj@google.com
+Abstract: This specification defines an API that enables web applications to synchronize musical tempo, beat grid, phase, and start/stop transport state across local-network peers. It is designed to be compatible with Ableton Link.
+Markup Shorthands: markdown yes, idl yes
+Indent: 2
+</pre>
+
+# Introduction # {#intro}
+
+Web applications for audio production, live performance, and interactive education need to synchronize playback with other software and hardware instruments on the same local network.
+
+Native music applications solve this problem using Ableton Link. Ableton Link is a peer-to-peer protocol over UDP multicast. It synchronizes tempo, beat position, and musical phase without a central master device.
+
+This specification introduces the Web Tempo Sync API. The browser owns the local network sockets, handles peer discovery, and maintains clock synchronization. Web applications interact with high-level snapshot objects to schedule audio events and coordinate musical transport.
+
+# Concepts # {#concepts}
+
+## Sessions and Peers ## {#concept-session}
+
+A <dfn>tempo session</dfn> represents a connection to a synchronized musical timeline shared among local network participants.
+
+A <dfn>peer</dfn> is an independent network participant in the session. Participants can include digital audio workstations, mobile devices, hardware synthesizers, and web browser profiles.
+
+To prevent local network flooding, a user agent exposes at most one logical peer per user profile. Multiple documents within the same user agent profile share the underlying session endpoint.
+
+## Timelines, Beats, and Tempo ## {#concept-timeline}
+
+A <dfn>timeline</dfn> maps points in continuous time to continuous musical beat coordinates.
+
+<dfn>Tempo</dfn> is the rate of musical progress, measured in beats per minute (BPM). Tempo must be a positive finite floating-point number.
+
+A <dfn>beat</dfn> is a continuous floating-point number indicating musical position. Integer values represent whole beat intervals (such as quarter notes in common time). Fractional values represent sub-beat subdivisions.
+
+The relationship between time $t$ and beat $b$ on a linear timeline segment is:
+
+$$b(t) = b_0 + (t - t_0) \times \frac{\text{tempo}}{60}$$
+
+$$t(b) = t_0 + (b - b_0) \times \frac{60}{\text{tempo}}$$
+
+Here $t_0$ is the reference time origin and $b_0$ is the reference beat origin.
+
+## Quantum and Phase ## {#concept-quantum}
+
+Musical structure is organized into recurring bars or measures.
+
+The <dfn>quantum</dfn> is the number of beats in a musical measure. For example, 4/4 time has a quantum of 4.0 beats. 3/4 time has a quantum of 3.0 beats.
+
+The <dfn>phase</dfn> represents the current position within the measure, defined over the half-open interval $[0, \text{quantum})$:
+
+$$\text{phase}(t) = (b(t) \pmod{\text{quantum}} + \text{quantum}) \pmod{\text{quantum}}$$
+
+Two devices share phase alignment when their beat grids align to the same bar boundaries.
+
+## Host Time and Time Base Conversion ## {#concept-time-bases}
+
+The underlying network sync engine operates on a monotonic system <dfn>host time</dfn>.
+
+Web applications operate on two distinct browser time bases:
+1. `performance.now()`: Monotonic document time in seconds, suitable for visual rendering.
+2. `AudioContext.currentTime`: Audio rendering hardware time, measured in seconds from the audio hardware buffer timeline.
+
+When an application captures session state, the user agent converts timeline parameters from host time into the requested time base.
+
+# Navigator Extension # {#navigator-extension}
+
+<xmp class="idl">
+[SecureContext]
+partial interface Navigator {
+  readonly attribute TempoSync tempoSync;
+};
+</xmp>
+
+The {{Navigator/tempoSync}} attribute returns the {{TempoSync}} instance associated with the current document.
+
+# Interface `TempoSync` # {#interface-temposync}
+
+<xmp class="idl">
+interface TempoSync {
+  Promise<TempoSession> requestSession(optional TempoSessionOptions options = {});
+};
+
+dictionary TempoSessionOptions {
+  double quantum = 4;
+  boolean startStopSync = false;
+};
+</xmp>
+
+The {{TempoSync}} interface is the entry point for joining a tempo synchronization session.
+
+## Methods ## {#temposync-methods}
+
+<div algorithm="requestSession">
+When the <dfn method for="TempoSync">requestSession(|options|)</dfn> method is invoked, the user agent MUST run these steps:
+
+1. Let |promise| be a new promise.
+2. Let |document| be the current document.
+3. If |document| is not a secure context, reject |promise| with a "{{SecurityError}}" {{DOMException}} and return |promise|.
+4. If the {{Permissions Policy}} feature `"tempo-sync"` is not allowed in |document|, reject |promise| with a "{{SecurityError}}" {{DOMException}} and return |promise|.
+5. If |options|["quantum"] is less than or equal to 0, or is not a finite number, reject |promise| with a {{RangeError}} and return |promise|.
+6. Run the following steps in parallel:
+  1. Let |permission| be the result of requesting permission to use `"tempo-sync"`.
+  2. If |permission| is not `"granted"`, reject |promise| with a "{{NotAllowedError}}" {{DOMException}} and abort these steps.
+  3. Let |session| be a newly created {{TempoSession}} instance initialized with |options|.
+  4. Connect |session| to the user agent's shared tempo sync network endpoint.
+  5. Resolve |promise| with |session|.
+7. Return |promise|.
+</div>
+
+# Interface `TempoSession` # {#interface-temposession}
+
+<xmp class="idl">
+interface TempoSession : EventTarget {
+  readonly attribute unsigned long numPeers;
+  readonly attribute double quantum;
+  TempoSessionState captureState(optional BaseAudioContext context);
+  undefined commitState(TempoSessionState state);
+  undefined close();
+  attribute EventHandler onnumpeerschange;
+  attribute EventHandler ontempochange;
+  attribute EventHandler onplayingchange;
+};
+</xmp>
+
+The {{TempoSession}} object manages the connection to the shared musical timeline.
+
+## Attributes ## {#temposession-attributes}
+
+* <dfn attribute for="TempoSession">numPeers</dfn>: Returns the number of other active peers discovered on the local network.
+* <dfn attribute for="TempoSession">quantum</dfn>: Returns the default quantum specified when the session was created.
+* <dfn attribute for="TempoSession">onnumpeerschange</dfn>: Event handler invoked when {{TempoSession/numPeers}} changes.
+* <dfn attribute for="TempoSession">ontempochange</dfn>: Event handler invoked when the session tempo changes.
+* <dfn attribute for="TempoSession">onplayingchange</dfn>: Event handler invoked when the shared start/stop transport state changes.
+
+## Methods ## {#temposession-methods}
+
+<div algorithm="captureState">
+When the <dfn method for="TempoSession">captureState(|context|)</dfn> method is invoked, the user agent MUST run these steps:
+
+1. If this {{TempoSession}} is closed, throw an "{{InvalidStateError}}" {{DOMException}}.
+2. Let |snapshot| be a new {{TempoSessionState}} object.
+3. Let |timeline| be the current internal network timeline.
+4. If |context| is provided:
+  1. Let |timeBase| be |context|'s current hardware time in seconds.
+  2. Map |timeline|'s host time coordinates into |context|'s time base using the audio clock filter.
+5. If |context| is omitted:
+  1. Let |timeBase| be `performance.now()` divided by 1000.0.
+  2. Map |timeline|'s host time coordinates into document monotonic time in seconds.
+6. Initialize |snapshot| with:
+  * `tempo`: the current timeline tempo in BPM.
+  * `timeOrigin`: the mapped reference time origin.
+  * `beatOrigin`: the reference beat coordinate at `timeOrigin`.
+  * `quantum`: this session's default quantum.
+  * `isPlaying`: the current transport playback state.
+  * `timeForIsPlaying`: the mapped time when `isPlaying` was last toggled.
+7. Return |snapshot|.
+</div>
+
+<div algorithm="commitState">
+When the <dfn method for="TempoSession">commitState(|state|)</dfn> method is invoked, the user agent MUST run these steps:
+
+1. If this {{TempoSession}} is closed, throw an "{{InvalidStateError}}" {{DOMException}}.
+2. If |state| was not created by this {{TempoSession}}, throw an "{{InvalidModificationError}}" {{DOMException}}.
+3. If |state| was already committed, throw an "{{InvalidStateError}}" {{DOMException}}.
+4. Convert |state|'s time origins back to system host time.
+5. Apply the modified timeline parameters to the internal network timeline.
+6. Transmit update packets to local network peers.
+7. Mark |state| as committed.
+</div>
+
+<div algorithm="close">
+When the <dfn method for="TempoSession">close()</dfn> method is invoked, the user agent MUST run these steps:
+
+1. If this {{TempoSession}} is already closed, return.
+2. Mark this {{TempoSession}} as closed.
+3. Detach this document from the underlying shared network session.
+4. If no other active documents reference the shared session, shut down the local network socket.
+</div>
+
+# Interface `TempoSessionState` # {#interface-temposessionstate}
+
+<xmp class="idl">
+interface TempoSessionState {
+  readonly attribute double tempo;
+  undefined setTempo(double bpm, double atTime);
+  double beatAtTime(double time, optional double quantum);
+  double phaseAtTime(double time, optional double quantum);
+  double timeAtBeat(double beat, optional double quantum);
+  undefined requestBeatAtTime(double beat, double time, optional double quantum);
+  undefined forceBeatAtTime(double beat, double time, optional double quantum);
+  readonly attribute boolean isPlaying;
+  readonly attribute double timeForIsPlaying;
+  undefined setIsPlaying(boolean playing, double atTime);
+};
+</xmp>
+
+A {{TempoSessionState}} instance is an immutable snapshot of the timeline at the moment of capture, unless modified through its mutation methods prior to committing.
+
+## Attributes ## {#temposessionstate-attributes}
+
+* <dfn attribute for="TempoSessionState">tempo</dfn>: Returns the tempo in beats per minute.
+* <dfn attribute for="TempoSessionState">isPlaying</dfn>: Returns true if the transport is playing, false otherwise.
+* <dfn attribute for="TempoSessionState">timeForIsPlaying</dfn>: Returns the time at which `isPlaying` was last changed, in seconds.
+
+## Methods ## {#temposessionstate-methods}
+
+<div algorithm="setTempo">
+When <dfn method for="TempoSessionState">setTempo(|bpm|, |atTime|)</dfn> is invoked, the user agent MUST run these steps:
+
+1. If |bpm| is less than or equal to 0, or is not a finite number, throw a {{RangeError}}.
+2. If |atTime| is not a finite number, throw a {{TypeError}}.
+3. Let |currentBeat| be the result of invoking {{TempoSessionState/beatAtTime()}} with |atTime|.
+4. Set this object's time origin to |atTime|.
+5. Set this object's beat origin to |currentBeat|.
+6. Set this object's tempo to |bpm|.
+</div>
+
+<div algorithm="beatAtTime">
+When <dfn method for="TempoSessionState">beatAtTime(|time|, |quantum|)</dfn> is invoked, the user agent MUST run these steps:
+
+1. If |time| is not a finite number, throw a {{TypeError}}.
+2. Let |elapsed| be |time| minus this object's time origin.
+3. Let |beatsPerSecond| be this object's tempo divided by 60.0.
+4. Let |beat| be this object's beat origin plus (|elapsed| * |beatsPerSecond|).
+5. Return |beat|.
+</div>
+
+<div algorithm="timeAtBeat">
+When <dfn method for="TempoSessionState">timeAtBeat(|beat|, |quantum|)</dfn> is invoked, the user agent MUST run these steps:
+
+1. If |beat| is not a finite number, throw a {{TypeError}}.
+2. Let |beatDelta| be |beat| minus this object's beat origin.
+3. Let |secondsPerBeat| be 60.0 divided by this object's tempo.
+4. Let |time| be this object's time origin plus (|beatDelta| * |secondsPerBeat|).
+5. Return |time|.
+</div>
+
+<div algorithm="phaseAtTime">
+When <dfn method for="TempoSessionState">phaseAtTime(|time|, |quantum|)</dfn> is invoked, the user agent MUST run these steps:
+
+1. If |time| is not a finite number, throw a {{TypeError}}.
+2. Let |q| be |quantum| if provided and greater than 0, otherwise this object's default quantum.
+3. Let |beat| be the result of invoking {{TempoSessionState/beatAtTime()}} with |time|.
+4. Let |rawPhase| be |beat| modulo |q|.
+5. Return (|rawPhase| + |q|) modulo |q|.
+</div>
+
+<div algorithm="requestBeatAtTime">
+When <dfn method for="TempoSessionState">requestBeatAtTime(|beat|, |time|, |quantum|)</dfn> is invoked, the user agent MUST run these steps:
+
+1. If |beat| or |time| is not a finite number, throw a {{TypeError}}.
+2. Let |q| be |quantum| if provided and greater than 0, otherwise this object's default quantum.
+3. Let |currentBeat| be the result of invoking {{TempoSessionState/beatAtTime()}} with |time|.
+4. Let |phaseDelta| be (|beat| - |currentBeat|) modulo |q|.
+5. Set this object's time origin to |time|.
+6. Set this object's beat origin to |currentBeat| + |phaseDelta|.
+</div>
+
+<div algorithm="forceBeatAtTime">
+When <dfn method for="TempoSessionState">forceBeatAtTime(|beat|, |time|, |quantum|)</dfn> is invoked, the user agent MUST run these steps:
+
+1. If |beat| or |time| is not a finite number, throw a {{TypeError}}.
+2. Set this object's time origin to |time|.
+3. Set this object's beat origin to |beat|.
+</div>
+
+<div algorithm="setIsPlaying">
+When <dfn method for="TempoSessionState">setIsPlaying(|playing|, |atTime|)</dfn> is invoked, the user agent MUST run these steps:
+
+1. If |atTime| is not a finite number, throw a {{TypeError}}.
+2. Set this object's `isPlaying` to |playing|.
+3. Set this object's `timeForIsPlaying` to |atTime|.
+</div>
+
+# Permissions and Policy Integration # {#permissions-policy}
+
+## Permissions Policy ## {#permissions-policy-integration}
+
+This specification defines a policy-controlled feature identified by the string `"tempo-sync"`.
+
+The default allowlist is `'self'`.
+
+An iframe document cannot call {{TempoSync/requestSession()}} unless allowed by its container policy:
+
+```html
+<iframe src="https://synth.example.com" allow="tempo-sync"></iframe>
+```
+
+## Permissions API ## {#permissions-api-integration}
+
+The permission name `"tempo-sync"` is added to the {{PermissionName}} enum:
+
+```webidl
+enum PermissionName {
+  "tempo-sync"
+};
+```
+
+* When granted, {{TempoSync/requestSession()}} succeeds without prompting.
+* When denied, {{TempoSync/requestSession()}} immediately rejects with a "{{NotAllowedError}}" {{DOMException}}.
+* When in prompt state, the user agent prompts the user with the origin of the document.
+
+# Security and Privacy Considerations # {#security-privacy}
+
+## Local Network Presence and Topology Leakage ## {#sec-local-network}
+
+Joining an Ableton Link session involves sending UDP multicast packets on the local area network. Web applications could theoretically use this mechanism to infer the presence of local devices.
+
+Mitigations:
+1. **Explicit permission prompt**: The user agent MUST prompt the user before initiating any local network traffic.
+2. **No address exposure**: The API exposes only the aggregate count of connected peers ({{TempoSession/numPeers}}). No IP addresses, port numbers, or device names are exposed to script.
+3. **Single peer per profile**: The user agent joins as one logical peer. Internal tab topology cannot be fingerprinted by external peers.
+
+## Cross-Origin Leakage ## {#sec-cross-origin}
+
+The API is restricted to secure contexts (`[SecureContext]`) and top-level browsing contexts by default. Embedding in iframes requires an explicit `allow="tempo-sync"` directive.
+
+## Multicast Flooding and Denial of Service ## {#sec-dos}
+
+A compromised or malicious page could attempt to change tempo rapidly to degrade network performance or disrupt other music equipment.
+
+The user agent MUST enforce rate limits on {{TempoSession/commitState()}}. Calls exceeding reasonable musical adjustment rates (for example, more than 20 commits per second) MUST be throttled or ignored.
+
+# Acknowledgements # {#acknowledgements}
+
+The authors thank the Ableton team for creating and open-sourcing the Ableton Link protocol. We also thank the Web Audio Working Group and the web music community for helpful discussions.
