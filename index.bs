@@ -111,6 +111,7 @@ When the <dfn method for="TempoSync">requestSession(|options|)</dfn> method is i
   4. Connect |session| to the user agent's shared tempo sync network endpoint.
   5. Resolve |promise| with |session|.
 7. Return |promise|.
+
 </div>
 
 # Interface `TempoSession` # {#interface-temposession}
@@ -160,6 +161,7 @@ When the <dfn method for="TempoSession">captureState(|context|)</dfn> method is 
   * `isPlaying`: the current transport playback state.
   * `timeForIsPlaying`: the mapped time when `isPlaying` was last toggled.
 7. Return |snapshot|.
+
 </div>
 
 <div algorithm="commitState">
@@ -172,6 +174,7 @@ When the <dfn method for="TempoSession">commitState(|state|)</dfn> method is inv
 5. Apply the modified timeline parameters to the internal network timeline.
 6. Transmit update packets to local network peers.
 7. Mark |state| as committed.
+
 </div>
 
 <div algorithm="close">
@@ -181,6 +184,7 @@ When the <dfn method for="TempoSession">close()</dfn> method is invoked, the use
 2. Mark this {{TempoSession}} as closed.
 3. Detach this document from the underlying shared network session.
 4. If no other active documents reference the shared session, shut down the local network socket.
+
 </div>
 
 # Interface `TempoSessionState` # {#interface-temposessionstate}
@@ -219,6 +223,7 @@ When <dfn method for="TempoSessionState">setTempo(|bpm|, |atTime|)</dfn> is invo
 4. Set this object's time origin to |atTime|.
 5. Set this object's beat origin to |currentBeat|.
 6. Set this object's tempo to |bpm|.
+
 </div>
 
 <div algorithm="beatAtTime">
@@ -229,6 +234,7 @@ When <dfn method for="TempoSessionState">beatAtTime(|time|, |quantum|)</dfn> is 
 3. Let |beatsPerSecond| be this object's tempo divided by 60.0.
 4. Let |beat| be this object's beat origin plus (|elapsed| * |beatsPerSecond|).
 5. Return |beat|.
+
 </div>
 
 <div algorithm="timeAtBeat">
@@ -239,6 +245,7 @@ When <dfn method for="TempoSessionState">timeAtBeat(|beat|, |quantum|)</dfn> is 
 3. Let |secondsPerBeat| be 60.0 divided by this object's tempo.
 4. Let |time| be this object's time origin plus (|beatDelta| * |secondsPerBeat|).
 5. Return |time|.
+
 </div>
 
 <div algorithm="phaseAtTime">
@@ -249,6 +256,7 @@ When <dfn method for="TempoSessionState">phaseAtTime(|time|, |quantum|)</dfn> is
 3. Let |beat| be the result of invoking {{TempoSessionState/beatAtTime()}} with |time|.
 4. Let |rawPhase| be |beat| modulo |q|.
 5. Return (|rawPhase| + |q|) modulo |q|.
+
 </div>
 
 <div algorithm="requestBeatAtTime">
@@ -260,6 +268,7 @@ When <dfn method for="TempoSessionState">requestBeatAtTime(|beat|, |time|, |quan
 4. Let |phaseDelta| be (|beat| - |currentBeat|) modulo |q|.
 5. Set this object's time origin to |time|.
 6. Set this object's beat origin to |currentBeat| + |phaseDelta|.
+
 </div>
 
 <div algorithm="forceBeatAtTime">
@@ -268,6 +277,7 @@ When <dfn method for="TempoSessionState">forceBeatAtTime(|beat|, |time|, |quantu
 1. If |beat| or |time| is not a finite number, throw a {{TypeError}}.
 2. Set this object's time origin to |time|.
 3. Set this object's beat origin to |beat|.
+
 </div>
 
 <div algorithm="setIsPlaying">
@@ -276,6 +286,7 @@ When <dfn method for="TempoSessionState">setIsPlaying(|playing|, |atTime|)</dfn>
 1. If |atTime| is not a finite number, throw a {{TypeError}}.
 2. Set this object's `isPlaying` to |playing|.
 3. Set this object's `timeForIsPlaying` to |atTime|.
+
 </div>
 
 # Permissions and Policy Integration # {#permissions-policy}
