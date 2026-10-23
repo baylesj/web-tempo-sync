@@ -90,3 +90,4 @@ The primary security and privacy discussions focused on:
 1. **Local Network Access (LNA)**: Preventing unauthorized probing of local networks. Mitigated by the permission prompt and absence of socket primitives.
 2. **Denial of service and packet flooding**: Mitigated by browser-enforced commit rate limits and single-peer consolidation.
 3. **Tab competition**: Mitigated by managing a single Link endpoint per browser profile.
+

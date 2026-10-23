@@ -25,3 +25,4 @@ jobs:
           DESTINATION: index.html
           BUILD_FAIL_ON: fatal
           GH_PAGES_BRANCH: gh-pages
+

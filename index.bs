@@ -330,3 +330,4 @@ The user agent MUST enforce rate limits on {{TempoSession/commitState()}}. Calls
 # Acknowledgements # {#acknowledgements}
 
 The authors thank the Ableton team for creating and open-sourcing the Ableton Link protocol. We also thank the Web Audio Working Group and the web music community for helpful discussions.
+

@@ -16,3 +16,4 @@ Specifications in this repository are developed under the W3C Community Contribu
 2. Submit pull requests for editorial improvements, spec refinements, or explainer updates.
 3. Keep prose simple, clear, and direct. Avoid marketing language. Avoid em-dashes.
 4. Verify that bikeshed compiles cleanly before submitting large spec edits.
+
