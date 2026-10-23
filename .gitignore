@@ -1,0 +1,10 @@
+# Bikeshed generated files
+index.html
+.bikeshed-cache/
+
+# Node / Editor / OS artifacts
+node_modules/
+.DS_Store
+Thumbs.db
+*~
+*.swp
