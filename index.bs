@@ -38,13 +38,13 @@ A <dfn>timeline</dfn> maps points in continuous time to continuous musical beat 
 
 A <dfn>beat</dfn> is a continuous floating-point number indicating musical position. Integer values represent whole beat intervals (such as quarter notes in common time). Fractional values represent sub-beat subdivisions.
 
-The relationship between time $t$ and beat $b$ on a linear timeline segment is:
+The relationship between time <math><mi>t</mi></math> and beat <math><mi>b</mi></math> on a linear timeline segment is:
 
-$$b(t) = b_0 + (t - t_0) \times \frac{\text{tempo}}{60}$$
+<math display="block"><mi>b</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>=</mo><msub><mi>b</mi><mn>0</mn></msub><mo>+</mo><mo>(</mo><mi>t</mi><mo>−</mo><msub><mi>t</mi><mn>0</mn></msub><mo>)</mo><mo>×</mo><mfrac><mtext>tempo</mtext><mn>60</mn></mfrac></math>
 
-$$t(b) = t_0 + (b - b_0) \times \frac{60}{\text{tempo}}$$
+<math display="block"><mi>t</mi><mo>(</mo><mi>b</mi><mo>)</mo><mo>=</mo><msub><mi>t</mi><mn>0</mn></msub><mo>+</mo><mo>(</mo><mi>b</mi><mo>−</mo><msub><mi>b</mi><mn>0</mn></msub><mo>)</mo><mo>×</mo><mfrac><mn>60</mn><mtext>tempo</mtext></mfrac></math>
 
-Here $t_0$ is the reference time origin and $b_0$ is the reference beat origin.
+Here <math><msub><mi>t</mi><mn>0</mn></msub></math> is the reference time origin and <math><msub><mi>b</mi><mn>0</mn></msub></math> is the reference beat origin.
 
 ## Quantum and Phase ## {#concept-quantum}
 
@@ -52,9 +52,9 @@ Musical structure is organized into recurring bars or measures.
 
 The <dfn>quantum</dfn> is the number of beats in a musical measure. For example, 4/4 time has a quantum of 4.0 beats. 3/4 time has a quantum of 3.0 beats.
 
-The <dfn>phase</dfn> represents the current position within the measure, defined over the half-open interval $[0, \text{quantum})$:
+The <dfn>phase</dfn> represents the current position within the measure, defined over the half-open interval <math><mo>[</mo><mn>0</mn><mo>,</mo><mtext>quantum</mtext><mo>)</mo></math>:
 
-$$\text{phase}(t) = (b(t) \pmod{\text{quantum}} + \text{quantum}) \pmod{\text{quantum}}$$
+<math display="block"><mtext>phase</mtext><mo>(</mo><mi>t</mi><mo>)</mo><mo>=</mo><mo>(</mo><mi>b</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo lspace="0.35em" rspace="0.35em">mod</mo><mtext>quantum</mtext><mo>+</mo><mtext>quantum</mtext><mo>)</mo><mo lspace="0.35em" rspace="0.35em">mod</mo><mtext>quantum</mtext></math>
 
 Two devices share phase alignment when their beat grids align to the same bar boundaries.
 
