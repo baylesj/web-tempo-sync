@@ -40,6 +40,9 @@ Musicians and developers encounter several common scenarios where browser-based 
 4. **Hybrid software and hardware setups**:
    Standalone hardware devices (such as Akai MPCs, Ableton Push 3, and Teenage Engineering devices) speak Ableton Link over Wi-Fi. A web-based synthesizer running on a laptop can lock to hardware grooves with zero configuration.
 
+5. **A phone in the room**:
+   A musician with an Ableton Move or a laptop running Live opens a web instrument or a practice tool on their Android phone, on the same Wi-Fi, and it plays in time with no app to install. This is the most direct mobile case, and the one that depends most on how Android handles local networking (see [Android](#android)).
+
 ## Proposed API
 
 The API exposes a `TempoSync` entry point on `navigator` in secure contexts. Calling `navigator.tempoSync.requestSession()` prompts the user for permission (if not already granted) and returns a `TempoSession`.
@@ -258,6 +261,18 @@ Musical sync requires more than identical tempo. It requires alignment on bar bo
 * **Quantum**: The number of beats in a musical cycle or bar. Standard 4/4 time has a quantum of 4. A 3/4 waltz has a quantum of 3.
 * **Phase**: The instantaneous position within the bar, defined as `phase = beat mod quantum`.
 * **Beat realignment**: When a user jumps to a new beat position, `requestBeatAtTime()` shifts the beat grid while maintaining continuous phase alignment with the rest of the network. In contrast, `forceBeatAtTime()` sets an absolute beat position immediately.
+
+### Android
+
+The design is expected to carry over to Chrome on Android. Ableton Link already runs in Android apps (through the NDK), and the browser process, not the page, owns the protocol, as on desktop. The differences are in the platform around it:
+
+* **Receiving multicast.** Android filters incoming multicast unless the app holds a `WifiManager.MulticastLock`, which needs the `CHANGE_WIFI_MULTICAST_STATE` permission. The browser would take the lock only while at least one tab has an open session, and release it when the last one closes, since holding it costs battery.
+* **Local network permission.** Android is adding a runtime permission for local network access, previewed in Android 16. The browser would need it in addition to the per-origin `"tempo-sync"` prompt this proposal defines, and the two prompts should read as one decision to the user where possible. Chrome's Local Network Access permission for web pages is a related precedent worth aligning with.
+* **Background tabs.** Chrome on Android throttles, freezes and may discard background tabs, and the OS can stop the browser process. A frozen page cannot schedule audio, so a session is only useful while its tab is visible or playing audio. A reasonable rule: the browser stays joined to the Link session while any tab with a session is in the foreground or audible, and leaves it (so `numPeers` elsewhere drops) when none is.
+* **Audio latency.** Output latency is higher on Android and varies more between devices. That makes the `AudioContext` time mapping in `captureState()` (see [Time Base Mapping and Error Sources](#time-base-mapping-and-error-sources)), including the reported output latency, more important on Android than on desktop.
+* **Networks.** Phones are often on networks where Link cannot work: guest Wi-Fi and hotspots with client isolation, or mobile data. Pages should treat `numPeers` of 0 as a normal state and say so, not as an error.
+
+Open question: should the browser keep the session alive briefly after the last tab is backgrounded, so that switching apps mid-performance doesn't drop the device out of the session?
 
 ## Considered Alternatives
 
