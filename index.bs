@@ -12,6 +12,11 @@ Markup Shorthands: markdown yes, idl yes
 Indent: 2
 </pre>
 
+<style>
+  /* Display formulas each get their own line with room around them (consecutive ones otherwise touch). */
+  math[display=block] { margin-block: 0.9em; }
+</style>
+
 # Introduction # {#intro}
 
 Web applications for audio production, live performance, and interactive education need to synchronize playback with other software and hardware instruments on the same local network.
