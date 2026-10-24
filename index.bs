@@ -66,7 +66,7 @@ Web applications operate on two distinct browser time bases:
 1. `performance.now()`: Monotonic document time in seconds, suitable for visual rendering.
 2. `AudioContext.currentTime`: Audio rendering hardware time, measured in seconds from the audio hardware buffer timeline.
 
-When an application captures session state, the user agent converts timeline parameters from host time into the requested time base.
+When an application captures session state, the user agent converts timeline parameters from [=host time=] into the requested time base.
 
 # Navigator Extension # {#navigator-extension}
 
@@ -102,10 +102,10 @@ When the <dfn method for="TempoSync">requestSession(|options|)</dfn> method is i
 1. Let |promise| be a new promise.
 2. Let |document| be the current document.
 3. If |document| is not a secure context, reject |promise| with a "{{SecurityError}}" {{DOMException}} and return |promise|.
-4. If the {{Permissions Policy}} feature `"tempo-sync"` is not allowed in |document|, reject |promise| with a "{{SecurityError}}" {{DOMException}} and return |promise|.
+4. If |document| is not [=allowed to use=] the [=policy-controlled feature=] `"tempo-sync"`, reject |promise| with a "{{SecurityError}}" {{DOMException}} and return |promise|.
 5. If |options|["quantum"] is less than or equal to 0, or is not a finite number, reject |promise| with a {{RangeError}} and return |promise|.
 6. Run the following steps in parallel:
-  1. Let |permission| be the result of requesting permission to use `"tempo-sync"`.
+  1. Let |permission| be the result of [=requesting permission to use=] `"tempo-sync"`.
   2. If |permission| is not `"granted"`, reject |promise| with a "{{NotAllowedError}}" {{DOMException}} and abort these steps.
   3. Let |session| be a newly created {{TempoSession}} instance initialized with |options|.
   4. Connect |session| to the user agent's shared tempo sync network endpoint.
@@ -129,12 +129,12 @@ interface TempoSession : EventTarget {
 };
 </xmp>
 
-The {{TempoSession}} object manages the connection to the shared musical timeline.
+A {{TempoSession}} object is a document's connection to a [=tempo session=]: the shared musical [=timeline=].
 
 ## Attributes ## {#temposession-attributes}
 
-* <dfn attribute for="TempoSession">numPeers</dfn>: Returns the number of other active peers discovered on the local network.
-* <dfn attribute for="TempoSession">quantum</dfn>: Returns the default quantum specified when the session was created.
+* <dfn attribute for="TempoSession">numPeers</dfn>: Returns the number of other active [=peers=] discovered on the local network.
+* <dfn attribute for="TempoSession">quantum</dfn>: Returns the default [=quantum=] specified when the session was created.
 * <dfn attribute for="TempoSession">onnumpeerschange</dfn>: Event handler invoked when {{TempoSession/numPeers}} changes.
 * <dfn attribute for="TempoSession">ontempochange</dfn>: Event handler invoked when the session tempo changes.
 * <dfn attribute for="TempoSession">onplayingchange</dfn>: Event handler invoked when the shared start/stop transport state changes.
@@ -146,7 +146,7 @@ When the <dfn method for="TempoSession">captureState(|context|)</dfn> method is 
 
 1. If this {{TempoSession}} is closed, throw an "{{InvalidStateError}}" {{DOMException}}.
 2. Let |snapshot| be a new {{TempoSessionState}} object.
-3. Let |timeline| be the current internal network timeline.
+3. Let |timeline| be the current internal network [=timeline=].
 4. If |context| is provided:
   1. Let |timeBase| be |context|'s current hardware time in seconds.
   2. Map |timeline|'s host time coordinates into |context|'s time base using the audio clock filter.
@@ -155,9 +155,9 @@ When the <dfn method for="TempoSession">captureState(|context|)</dfn> method is 
   2. Map |timeline|'s host time coordinates into document monotonic time in seconds.
 6. Initialize |snapshot| with:
   * `tempo`: the current timeline tempo in BPM.
-  * `timeOrigin`: the mapped reference time origin.
-  * `beatOrigin`: the reference beat coordinate at `timeOrigin`.
-  * `quantum`: this session's default quantum.
+  * [=TempoSessionState/time origin=]: the mapped reference time origin.
+  * [=TempoSessionState/beat origin=]: the reference beat coordinate at the time origin.
+  * [=TempoSessionState/default quantum=]: this session's {{TempoSession/quantum}}.
   * `isPlaying`: the current transport playback state.
   * `timeForIsPlaying`: the mapped time when `isPlaying` was last toggled.
 7. Return |snapshot|.
@@ -206,9 +206,17 @@ interface TempoSessionState {
 
 A {{TempoSessionState}} instance is an immutable snapshot of the timeline at the moment of capture, unless modified through its mutation methods prior to committing.
 
+## Internal slots ## {#temposessionstate-slots}
+
+A {{TempoSessionState}} has these internal slots, set by {{TempoSession/captureState()}}:
+
+* <dfn for="TempoSessionState">time origin</dfn>: a time, in the time base the state was captured in, that the [=TempoSessionState/beat origin=] is anchored to.
+* <dfn for="TempoSessionState">beat origin</dfn>: the [=beat=] at the [=TempoSessionState/time origin=].
+* <dfn for="TempoSessionState">default quantum</dfn>: the session's [=quantum=] when the state was captured, used when a method's `quantum` argument is omitted.
+
 ## Attributes ## {#temposessionstate-attributes}
 
-* <dfn attribute for="TempoSessionState">tempo</dfn>: Returns the tempo in beats per minute.
+* <dfn attribute for="TempoSessionState">tempo</dfn>: Returns the [=tempo=] in beats per minute.
 * <dfn attribute for="TempoSessionState">isPlaying</dfn>: Returns true if the transport is playing, false otherwise.
 * <dfn attribute for="TempoSessionState">timeForIsPlaying</dfn>: Returns the time at which `isPlaying` was last changed, in seconds.
 
@@ -220,8 +228,8 @@ When <dfn method for="TempoSessionState">setTempo(|bpm|, |atTime|)</dfn> is invo
 1. If |bpm| is less than or equal to 0, or is not a finite number, throw a {{RangeError}}.
 2. If |atTime| is not a finite number, throw a {{TypeError}}.
 3. Let |currentBeat| be the result of invoking {{TempoSessionState/beatAtTime()}} with |atTime|.
-4. Set this object's time origin to |atTime|.
-5. Set this object's beat origin to |currentBeat|.
+4. Set this object's [=TempoSessionState/time origin=] to |atTime|.
+5. Set this object's [=TempoSessionState/beat origin=] to |currentBeat|.
 6. Set this object's tempo to |bpm|.
 
 </div>
@@ -230,10 +238,12 @@ When <dfn method for="TempoSessionState">setTempo(|bpm|, |atTime|)</dfn> is invo
 When <dfn method for="TempoSessionState">beatAtTime(|time|, |quantum|)</dfn> is invoked, the user agent MUST run these steps:
 
 1. If |time| is not a finite number, throw a {{TypeError}}.
-2. Let |elapsed| be |time| minus this object's time origin.
+2. Let |elapsed| be |time| minus this object's [=TempoSessionState/time origin=].
 3. Let |beatsPerSecond| be this object's tempo divided by 60.0.
-4. Let |beat| be this object's beat origin plus (|elapsed| * |beatsPerSecond|).
-5. Return |beat|.
+4. Let |beat| be this object's [=TempoSessionState/beat origin=] plus (|elapsed| * |beatsPerSecond|).
+5. Return |beat|, the [=beat=] at |time|.
+
+Issue: |quantum| is accepted for parity with Ableton Link, whose beat and time mappings keep each peer's beat values phase-aligned with the session for the quantum the caller uses. In this draft's single shared timeline it has no effect. Either specify that alignment or remove the argument.
 
 </div>
 
@@ -241,10 +251,12 @@ When <dfn method for="TempoSessionState">beatAtTime(|time|, |quantum|)</dfn> is 
 When <dfn method for="TempoSessionState">timeAtBeat(|beat|, |quantum|)</dfn> is invoked, the user agent MUST run these steps:
 
 1. If |beat| is not a finite number, throw a {{TypeError}}.
-2. Let |beatDelta| be |beat| minus this object's beat origin.
+2. Let |beatDelta| be |beat| minus this object's [=TempoSessionState/beat origin=].
 3. Let |secondsPerBeat| be 60.0 divided by this object's tempo.
-4. Let |time| be this object's time origin plus (|beatDelta| * |secondsPerBeat|).
+4. Let |time| be this object's [=TempoSessionState/time origin=] plus (|beatDelta| * |secondsPerBeat|).
 5. Return |time|.
+
+Issue: |quantum| is accepted for parity with Ableton Link, whose beat and time mappings keep each peer's beat values phase-aligned with the session for the quantum the caller uses. In this draft's single shared timeline it has no effect. Either specify that alignment or remove the argument.
 
 </div>
 
@@ -252,10 +264,10 @@ When <dfn method for="TempoSessionState">timeAtBeat(|beat|, |quantum|)</dfn> is 
 When <dfn method for="TempoSessionState">phaseAtTime(|time|, |quantum|)</dfn> is invoked, the user agent MUST run these steps:
 
 1. If |time| is not a finite number, throw a {{TypeError}}.
-2. Let |q| be |quantum| if provided and greater than 0, otherwise this object's default quantum.
+2. Let |q| be |quantum| if provided and greater than 0, otherwise this object's [=TempoSessionState/default quantum=].
 3. Let |beat| be the result of invoking {{TempoSessionState/beatAtTime()}} with |time|.
 4. Let |rawPhase| be |beat| modulo |q|.
-5. Return (|rawPhase| + |q|) modulo |q|.
+5. Return (|rawPhase| + |q|) modulo |q|, the [=phase=].
 
 </div>
 
@@ -263,11 +275,11 @@ When <dfn method for="TempoSessionState">phaseAtTime(|time|, |quantum|)</dfn> is
 When <dfn method for="TempoSessionState">requestBeatAtTime(|beat|, |time|, |quantum|)</dfn> is invoked, the user agent MUST run these steps:
 
 1. If |beat| or |time| is not a finite number, throw a {{TypeError}}.
-2. Let |q| be |quantum| if provided and greater than 0, otherwise this object's default quantum.
+2. Let |q| be |quantum| if provided and greater than 0, otherwise this object's [=TempoSessionState/default quantum=].
 3. Let |currentBeat| be the result of invoking {{TempoSessionState/beatAtTime()}} with |time|.
 4. Let |phaseDelta| be (|beat| - |currentBeat|) modulo |q|.
-5. Set this object's time origin to |time|.
-6. Set this object's beat origin to |currentBeat| + |phaseDelta|.
+5. Set this object's [=TempoSessionState/time origin=] to |time|.
+6. Set this object's [=TempoSessionState/beat origin=] to |currentBeat| + |phaseDelta|.
 
 </div>
 
@@ -275,8 +287,10 @@ When <dfn method for="TempoSessionState">requestBeatAtTime(|beat|, |time|, |quan
 When <dfn method for="TempoSessionState">forceBeatAtTime(|beat|, |time|, |quantum|)</dfn> is invoked, the user agent MUST run these steps:
 
 1. If |beat| or |time| is not a finite number, throw a {{TypeError}}.
-2. Set this object's time origin to |time|.
-3. Set this object's beat origin to |beat|.
+2. Set this object's [=TempoSessionState/time origin=] to |time|.
+3. Set this object's [=TempoSessionState/beat origin=] to |beat|.
+
+Issue: |quantum| is accepted for parity with Ableton Link, whose beat and time mappings keep each peer's beat values phase-aligned with the session for the quantum the caller uses. In this draft's single shared timeline it has no effect. Either specify that alignment or remove the argument.
 
 </div>
 
@@ -293,7 +307,7 @@ When <dfn method for="TempoSessionState">setIsPlaying(|playing|, |atTime|)</dfn>
 
 ## Permissions Policy ## {#permissions-policy-integration}
 
-This specification defines a policy-controlled feature identified by the string `"tempo-sync"`.
+This specification defines a [=policy-controlled feature=] identified by the string `"tempo-sync"`.
 
 The default allowlist is `'self'`.
 
@@ -305,13 +319,7 @@ An iframe document cannot call {{TempoSync/requestSession()}} unless allowed by 
 
 ## Permissions API ## {#permissions-api-integration}
 
-The permission name `"tempo-sync"` is added to the {{PermissionName}} enum:
-
-```webidl
-enum PermissionName {
-  "tempo-sync"
-};
-```
+This specification defines a [=powerful feature=] whose [=powerful feature/name=] is `"tempo-sync"`.
 
 * When granted, {{TempoSync/requestSession()}} succeeds without prompting.
 * When denied, {{TempoSync/requestSession()}} immediately rejects with a "{{NotAllowedError}}" {{DOMException}}.
