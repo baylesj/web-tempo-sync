@@ -8,7 +8,7 @@ Outside the browser, musicians solve this with [Ableton Link](https://www.ableto
 
 Web Tempo Sync lets a web page join that shared timeline. The browser does the networking and clock synchronization; the page captures snapshots of the timeline to schedule audio and visuals, and commits changes to it. The specification is independent of any protocol. Link is how browsers would implement it today, and the reason it's worth doing.
 
-**This is about reach, not timing.** Every alternative available today needs a native install: a helper app, a browser extension with a helper, a desktop wrapper. That rules out the cases that matter most for lowering the barrier: a lesson that just works, a phone, a school Chromebook. We built one of those alternatives ([an extension and helper](https://github.com/baylesj/tempo-sync/tree/main/extension)) and its timing is fine. What it can't do is reach people.
+**This is about reach, not timing.** Every alternative available today needs a native install: a helper app, a browser extension with a helper, a desktop wrapper. That rules out the cases that matter most for lowering the barrier: a lesson that just works, a phone, a school Chromebook. We built one of those alternatives ([an extension and helper](https://bayl.es/tempo-sync/#setup)) and its timing is fine. What it can't do is reach people.
 
 ## Goals
 
@@ -280,7 +280,7 @@ Each of these works for someone today. None of them works without installing som
 
 ### 1. A browser extension with a native helper
 
-We built this: [an extension and helper](https://github.com/baylesj/tempo-sync/tree/main/extension) that give stable Chrome `navigator.tempoSync`. It plays in time with Live. Timing isn't the problem: the extension estimates the offset between the page's clock and the helper's from the fastest of many pings, and measured a best round trip of 0.3 ms (median about 2 ms), so its error is around a tenth of a millisecond.
+We built this: [an extension and helper](https://bayl.es/tempo-sync/#setup) that give stable Chrome `navigator.tempoSync`. It plays in time with Live. Timing isn't the problem: the extension estimates the offset between the page's clock and the helper's from the fastest of many pings, and measured a best round trip of 0.3 ms (median about 2 ms), so its error is around a tenth of a millisecond.
 
 * **Trade-off**: The user installs a native helper and an extension that can read every site. It can't run on Android, ChromeOS or iOS. An educational site can't ask a learner to do this.
 
