@@ -2,50 +2,53 @@
 
 ## Introduction
 
-Music creation tools on the web include web-based digital audio workstations (DAWs), synthesizers, drum machines, live coding environments, and interactive music education sites. Today, these applications run in isolation. A musician playing a synth in a browser cannot easily play in tempo with a friend using Ableton Live, an iOS groovebox, or a hardware instrument on the same Wi-Fi network.
+Making music on the web is the lowest barrier to entry there is: open a link and play. But a web instrument plays alone. A student working through a lesson on [learn.ableton.com](https://learn.ableton.com), a live coder in [Strudel](https://strudel.cc), or someone trying a synth on their phone can't play in time with the DAW on their laptop, the groovebox on the desk, or the friend across the room.
 
-Outside the browser, musicians solve this problem using Ableton Link. Ableton Link is a peer-to-peer network protocol over UDP multicast. It synchronizes musical tempo, beat grid, phase, and start/stop state across independent devices without a central clock master.
+Outside the browser, musicians solve this with [Ableton Link](https://www.ableton.com/link/), a local-network protocol that keeps tempo, beat phase and start/stop in step across apps and devices, with no master clock and no setup. Live, Bitwig, Traktor, Rekordbox, Serato, Push, Move, MPCs and hundreds of mobile apps speak it. Web pages can't: joining takes UDP multicast, which no web page can do, and no browser offers anything like it.
 
-Web Tempo Sync brings native tempo synchronization to the web platform. The browser manages network discovery, UDP sockets, and distributed clock consensus in native code. Web applications interact with a high-level API to capture synchronized timeline snapshots and coordinate audio playback.
+Web Tempo Sync lets a web page join that shared timeline. The browser does the networking and clock synchronization; the page captures snapshots of the timeline to schedule audio and visuals, and commits changes to it. The specification is independent of any protocol. Link is how browsers would implement it today, and the reason it's worth doing.
+
+**This is about reach, not timing.** Every alternative available today needs a native install: a helper app, a browser extension with a helper, a desktop wrapper. That rules out the cases that matter most for lowering the barrier: a lesson that just works, a phone, a school Chromebook. We built one of those alternatives ([an extension and helper](https://github.com/baylesj/tempo-sync/tree/main/extension)) and its timing is fine. What it can't do is reach people.
 
 ## Goals
 
-* Enable web audio applications to synchronize tempo, beat position, and musical phase with local-network musical software and hardware.
-* Support optional shared start/stop transport state across peers.
-* Align seamlessly with the Web Audio API (`AudioContext.currentTime`) and high-resolution timing (`performance.now()`).
-* Support robust scheduling patterns, including lookahead audio scheduling and visual playhead rendering.
-* Protect user privacy and local network security by avoiding raw socket exposure, IP address leakage, and fingerprinting vectors.
+* Let web pages play in time (shared tempo, bar phase and start/stop) with music software and hardware on the local network, and with each other.
+* Work with no installation, on desktop and mobile.
+* Fit Web Audio scheduling: times in `AudioContext.currentTime` or `performance.now()`, usable from the main thread, Workers and AudioWorklets.
+* Never let one page disrupt everyone else's playing by accident.
+* Reveal as little as possible about the local network: one permission, one bit of presence, no addresses or device details.
 
 ## Non-goals
 
 * Exposing raw UDP or multicast sockets to web pages.
-* Exposing remote peer IP addresses, network interfaces, or device identifiers.
-* Transporting audio streams or MIDI events between devices. The API synchronizes timing and transport only.
-* Internet-wide tempo synchronization over wide-area networks (WAN). Link is engineered for local area networks with low packet jitter.
-* Replacing existing Web MIDI 1.0 clock messages where hardware DIN/USB MIDI cabling is already in use.
+* Defining a network protocol. The specification defines the timeline model; browsers implement it with existing protocols.
+* Carrying audio or MIDI between devices. Only timing and transport are shared.
+* Playing together over the internet. Link and similar protocols are designed for local networks with low jitter.
+* Replacing MIDI clock over cables, which Web MIDI already handles.
 
-## User Research and Motivating Use Cases
+## Motivating use cases
 
-Musicians and developers encounter several common scenarios where browser-based tempo synchronization is missing:
+1. **Music education (the motivating case).**
+   Ableton's [Learning Music and Learning Synths](https://learn.ableton.com) teach rhythm, harmony and synthesis interactively in the browser. A lesson that plays in time with the student's Live set, Push or Move, with nothing to install, turns an exercise into playing along. This is the case that needs the lowest barrier: a learner shouldn't have to install a helper to follow a lesson.
 
-1. **Music education platforms**:
-   Interactive tutorial platforms, such as Ableton's "Learning Synths" and "Learning Music" (learn.ableton.com), teach rhythmic concepts directly in the browser. Students cannot sync browser exercises with an external DAW or groovebox without exporting audio files. With Web Tempo Sync, a student can jam in the browser alongside an external drum machine.
+2. **Live coding and visuals.**
+   [Strudel](https://strudel.cc) (TidalCycles in the browser) and [Hydra](https://hydra.ojack.xyz) (live-coded visuals) are mainstays of algorave performance, often run side by side, and often next to a DAW or drum machine. Strudel's maintainers have wanted Link since 2023 ([issue #611](https://github.com/tidalcycles/strudel/issues/611)); two attempts ([#394](https://github.com/tidalcycles/strudel/pull/394), [#719](https://github.com/tidalcycles/strudel/pull/719)) were closed unfinished, and the issue concludes it would need a node server or a desktop app. An open pull request on Strudel's current home ([uzu/strudel#2135](https://codeberg.org/uzu/strudel/pulls/2135)) adds a pluggable external clock to follow MIDI clock, citing the same request. With this API, a Strudel tab, a Hydra tab and Live stay in time with no install.
 
-2. **Browser-based DAWs and sequencers**:
-   Web DAWs (such as Soundtrap, BandLab, and Amped Studio) and in-browser modular synths allow users to compose and produce music. In collaborative live performance settings, multiple musicians often play together on a local network. Web DAWs currently have no native way to lock tempo with other musicians on stage.
+3. **Visuals for DJs and performers.**
+   DJ software (Rekordbox, Serato, Traktor) speaks Link. Browser-based visuals can follow the set's tempo and bar phase.
 
-3. **Multi-device web ensembles**:
-   Musicians using phones, tablets, and laptops can open a web synthesizer URL and immediately form a synchronized ensemble over local Wi-Fi.
+4. **Web DAWs, sequencers and instruments.**
+   Web DAWs (Soundtrap, BandLab, Amped Studio) and web instruments can lock to the other gear on stage or in the studio.
 
-4. **Hybrid software and hardware setups**:
-   Standalone hardware devices (such as Akai MPCs, Ableton Push 3, and Teenage Engineering devices) speak Ableton Link over Wi-Fi. A web-based synthesizer running on a laptop can lock to hardware grooves with zero configuration.
+5. **A phone in the room.**
+   Someone with Live or a Move opens a web instrument or practice tool on their phone, on the same Wi-Fi, and it plays in time. This depends most on how Android handles local networking (see [Android](#android)).
 
-5. **A phone in the room**:
-   A musician with an Ableton Move or a laptop running Live opens a web instrument or a practice tool on their Android phone, on the same Wi-Fi, and it plays in time with no app to install. This is the most direct mobile case, and the one that depends most on how Android handles local networking (see [Android](#android)).
+6. **Many devices, one URL.**
+   A class or ensemble opens the same page on phones, tablets and Chromebooks and plays together.
 
 ## Proposed API
 
-The API exposes a `TempoSync` entry point on `navigator` in secure contexts. Calling `navigator.tempoSync.requestSession()` prompts the user for permission (if not already granted) and returns a `TempoSession`.
+A page calls `navigator.tempoSync.requestSession()`, which asks the user for permission the first time and returns a `TempoSession`. The page captures snapshots of the shared timeline with `captureState()`, schedules from them, and commits changes with `commitState()`.
 
 ```webidl
 [SecureContext]
@@ -53,26 +56,28 @@ partial interface Navigator {
   readonly attribute TempoSync tempoSync;
 };
 
+[SecureContext, Exposed=Window]
 interface TempoSync {
   Promise<TempoSession> requestSession(optional TempoSessionOptions options = {});
 };
 
 dictionary TempoSessionOptions {
   double quantum = 4;
-  boolean startStopSync = false;
 };
 
+[SecureContext, Exposed=Window]
 interface TempoSession : EventTarget {
-  readonly attribute unsigned long numPeers;
+  readonly attribute boolean hasPeers;
   readonly attribute double quantum;
   TempoSessionState captureState(optional BaseAudioContext context);
   undefined commitState(TempoSessionState state);
   undefined close();
-  attribute EventHandler onnumpeerschange;
-  attribute EventHandler ontempochange;
+  attribute EventHandler onpeerschange;
+  attribute EventHandler ontimelinechange;
   attribute EventHandler onplayingchange;
 };
 
+[SecureContext, Exposed=(Window,Worker,AudioWorklet), Serializable]
 interface TempoSessionState {
   readonly attribute double tempo;
   undefined setTempo(double bpm, double atTime);
@@ -87,50 +92,42 @@ interface TempoSessionState {
 };
 ```
 
-### Code Examples
+### Code examples
 
-#### Example 1: Lookahead Audio Scheduling in a Step Sequencer
+#### Example 1: Lookahead scheduling in a step sequencer
 
-Web Audio applications typically schedule audio events slightly ahead in time using `AudioContext.currentTime` to avoid glitches. Passing the `AudioContext` to `captureState()` aligns the tempo session timeline with `context.currentTime`.
+Web Audio apps schedule a little ahead of `AudioContext.currentTime`. Passing the context to `captureState()` puts the snapshot's times in that clock.
 
 ```javascript
 const audioCtx = new AudioContext();
 const session = await navigator.tempoSync.requestSession({ quantum: 4 });
 
-let nextBeatToSchedule = 0;
-const scheduleAheadTime = 0.1; // 100 ms lookahead window
+let nextBeat = null;
+const lookahead = 0.1; // seconds
 
 function scheduler() {
-  // Capture an immutable snapshot mapped to audioCtx.currentTime.
   const state = session.captureState(audioCtx);
+  const now = audioCtx.currentTime;
 
   if (state.isPlaying) {
-    const currentAudioTime = audioCtx.currentTime;
-    const windowEndTime = currentAudioTime + scheduleAheadTime;
-
-    // Find the beat number corresponding to the lookahead boundary.
-    const maxBeatInWindow = state.beatAtTime(windowEndTime);
-
-    while (nextBeatToSchedule < maxBeatInWindow) {
-      const beatTime = state.timeAtBeat(nextBeatToSchedule);
-      if (beatTime >= currentAudioTime) {
-        scheduleNoteOn(nextBeatToSchedule, beatTime);
-      }
-      nextBeatToSchedule += 1.0; // Advance by quarter note (1 beat)
+    nextBeat ??= Math.ceil(state.beatAtTime(now));
+    while (state.timeAtBeat(nextBeat) < now + lookahead) {
+      scheduleClick(nextBeat, state.timeAtBeat(nextBeat), state.phaseAtTime(state.timeAtBeat(nextBeat)));
+      nextBeat += 1;
     }
+  } else {
+    nextBeat = null;
   }
-
   setTimeout(scheduler, 25);
 }
 
-function scheduleNoteOn(beat, time) {
+function scheduleClick(beat, time, phase) {
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  osc.frequency.value = (beat % 4 === 0) ? 880 : 440;
+  osc.frequency.value = phase < 0.01 ? 880 : 440; // accent the downbeat
   gain.gain.setValueAtTime(0.2, time);
   gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
+  osc.connect(gain).connect(audioCtx.destination);
   osc.start(time);
   osc.stop(time + 0.05);
 }
@@ -138,129 +135,132 @@ function scheduleNoteOn(beat, time) {
 scheduler();
 ```
 
-#### Example 2: Visual Beat Indicator Using `performance.now()`
+#### Example 2: Starting a loop on the next bar
 
-When no `AudioContext` is passed to `captureState()`, the time base defaults to `performance.now()` expressed in seconds. This fits UI rendering loops driven by `requestAnimationFrame`.
+A lesson wants its four-bar exercise to start at beat 0, on a bar line, without moving anyone else's bars. `requestBeatAtTime()` waits for the next point where the session's phase matches and numbers it beat 0 for this page only. If the page is alone in the session, it starts right away.
 
 ```javascript
-const session = await navigator.tempoSync.requestSession({ quantum: 4 });
-const indicator = document.querySelector("#beat-indicator");
+startButton.addEventListener("click", () => {
+  const state = session.captureState(audioCtx);
+  state.requestBeatAtTime(0, audioCtx.currentTime, 4);
+  if (!state.isPlaying) {
+    state.setIsPlaying(true, state.timeAtBeat(0, 4));
+  }
+  session.commitState(state);
+  exercise.startAt(state.timeAtBeat(0, 4)); // the next bar line, or now if alone
+});
+```
 
+#### Example 3: A visual beat indicator
+
+Without an `AudioContext`, times are `performance.now()` in seconds, which suits `requestAnimationFrame`.
+
+```javascript
 function draw() {
-  // Time base is performance.now() in seconds.
   const state = session.captureState();
-  const nowInSeconds = performance.now() / 1000.0;
-
-  // phaseAtTime returns a value in [0, quantum), representing position in the bar.
-  const phase = state.phaseAtTime(nowInSeconds, 4.0);
-  const beatIndex = Math.floor(phase);
-
-  indicator.textContent = `Beat: ${beatIndex + 1} (${phase.toFixed(2)})`;
-  indicator.style.opacity = (phase - beatIndex < 0.2) ? "1.0" : "0.4";
-
+  const phase = state.phaseAtTime(performance.now() / 1000, 4);
+  indicator.textContent = `Beat ${Math.floor(phase) + 1}`;
+  indicator.style.opacity = phase % 1 < 0.2 ? "1" : "0.4";
   requestAnimationFrame(draw);
 }
-
 requestAnimationFrame(draw);
 ```
 
-#### Example 3: Changing Tempo and Transport State
-
-Applications modify session state by modifying a captured snapshot and committing it back to the session.
+#### Example 4: Changing tempo and transport
 
 ```javascript
-const session = await navigator.tempoSync.requestSession({
-  quantum: 4,
-  startStopSync: true
-});
-
-const tempoInput = document.querySelector("#bpm");
-const playBtn = document.querySelector("#play-toggle");
-
 tempoInput.addEventListener("change", () => {
   const state = session.captureState();
-  const now = performance.now() / 1000.0;
-  state.setTempo(parseFloat(tempoInput.value), now);
+  state.setTempo(Number(tempoInput.value), performance.now() / 1000);
   session.commitState(state);
 });
 
-playBtn.addEventListener("click", () => {
-  const state = session.captureState();
-  const now = performance.now() / 1000.0;
-  state.setIsPlaying(!state.isPlaying, now);
+playButton.addEventListener("click", () => {
+  const state = session.captureState(audioCtx);
+  const now = audioCtx.currentTime;
+  // Start or stop on the next bar line.
+  const nextBar = Math.ceil(state.beatAtTime(now, 4) / 4) * 4;
+  state.setIsPlaying(!state.isPlaying, state.timeAtBeat(nextBar, 4));
   session.commitState(state);
 });
 ```
 
-#### Example 4: Reacting to Network Peer Changes
+#### Example 5: Scheduling in an AudioWorklet
 
-A session notifies the page when peers join or leave the local network session.
+Snapshots are serializable. The main thread posts one to its processor whenever the timeline changes, and the processor reads it in its own `currentTime`, with no message per block.
 
 ```javascript
-const session = await navigator.tempoSync.requestSession();
-const peerCountDisplay = document.querySelector("#peer-count");
-
-function updatePeerCount() {
-  peerCountDisplay.textContent = `Connected Link Peers: ${session.numPeers}`;
-}
-
-session.addEventListener("numpeerschange", updatePeerCount);
-session.addEventListener("tempochange", () => {
-  const state = session.captureState();
-  console.log(`New session tempo: ${state.tempo} BPM`);
-});
-
-updatePeerCount();
+// Main thread
+const node = new AudioWorkletNode(audioCtx, "clicker");
+const send = () => node.port.postMessage(session.captureState(audioCtx));
+send();
+session.addEventListener("timelinechange", send);
+session.addEventListener("playingchange", send);
 ```
 
-## Detailed Design Discussion
+```javascript
+// clicker-processor.js
+class Clicker extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.port.onmessage = (e) => (this.state = e.data); // a TempoSessionState
+  }
+  process(inputs, [output]) {
+    const s = this.state;
+    if (!s?.isPlaying) return true;
+    const end = currentTime + 128 / sampleRate;
+    const beat = Math.ceil(s.beatAtTime(currentTime));
+    if (s.timeAtBeat(beat) < end) {
+      const frame = Math.round((s.timeAtBeat(beat) - currentTime) * sampleRate);
+      output[0][frame] = 1; // a one-sample click on the beat
+    }
+    return true;
+  }
+}
+registerProcessor("clicker", Clicker);
+```
 
-### Capture and Commit Snapshots
+#### Example 6: Showing whether anyone is playing along
 
-A common API design question is why `TempoSession` uses `captureState()` and `commitState()` snapshots rather than live getters like `session.tempo` or `session.currentBeat`.
+```javascript
+const status = () => (badge.textContent = session.hasPeers ? "Playing in time with your setup" : "Turn on Link in Live to play along");
+session.addEventListener("peerschange", status);
+status();
+```
 
-There are two primary reasons:
-1. **Avoiding torn reads**:
-   In audio programming, musical timing calculations require consistent evaluations of tempo, beat origin, and time origin. If properties updated dynamically between separate property accesses, an application could read tempo from one beat grid and beat position from a subsequent grid update. This causes jitter and audible glitches. A snapshot provides an immutable view of the timeline for a given calculation pass.
-2. **Atomic audio callback integration**:
-   Audio engines process blocks of audio on a real-time thread or in an `AudioWorklet`. The host application captures the session state at the beginning of an audio render pass, processes all buffer frames against that static snapshot, and commits any user edits atomically at the end.
+## Detailed design discussion
 
-### Single Session Per Browser Profile
+### Snapshots: capture and commit
 
-The underlying Ableton Link protocol assumes one logical endpoint per host process or network participant. If every open browser tab created an independent Link peer, a user opening three musical tabs on the same computer would see three peers competing and flooding local network multicast.
+Why snapshots instead of live properties like `session.tempo`? Timing maths needs tempo, beat origin and time origin from the same moment. If they could change between reads, a page could combine the tempo from one grid with the position from another and glitch. A snapshot is consistent, and because a timeline is linear, it stays correct until the timeline changes, which the `timelinechange` and `playingchange` events announce.
 
-Under this specification, the browser runs a single Link endpoint per user profile. All tabs requesting a session share this underlying endpoint. When multiple tabs connect, the browser acts as a single peer on the network. Tab-to-tab synchronization happens within the browser process without network overhead.
+Committing writes back only what the page changed. If another participant changes the tempo between a page's capture and commit, the commit doesn't undo it, unless the page also set a tempo.
 
-### Browser Ownership of Sockets
+### Shared phase, local beat numbers
 
-Exposing raw UDP sockets to web pages presents severe security risks. Multicast UDP sockets allow local network discovery, device fingerprinting, and potential amplification attacks.
+Participants share tempo and **phase** (where the bar lines fall for a given quantum), not beat numbers. Each session numbers beats its own way. That's what makes `requestBeatAtTime()` safe: a page that wants its pattern to start at beat 0 waits for the next bar line and calls it beat 0, and nobody else's music moves. `forceBeatAtTime()` is the deliberate exception. It moves the bar lines for everyone, by up to half a quantum, and is meant for apps that must put a beat at an exact time.
 
-By having the browser own the UDP socket and protocol implementation:
-* The page cannot craft arbitrary network packets.
-* The page cannot discover IP addresses, MAC addresses, or hardware details of other devices on the network.
-* The browser can enforce permissions, pause network activity when tabs are backgrounded, and rate-limit state modifications.
+The `quantum` arguments give beat numbers meaning across quanta: a page's beats keep the shared phase for whichever quantum it asks about.
 
-### Time Base Mapping and Error Sources
+An earlier draft shared one beat grid and had `requestBeatAtTime()` move it. Starting a loop in one browser tab would then jump the bar lines in Live mid-song.
 
-`captureState()` accepts an optional `BaseAudioContext`. When supplied, time arguments and return values use `context.currentTime`. When omitted, the time base is `performance.now()` in seconds.
+### One participant per browser
 
-The browser maps between these clocks and the underlying system host clock:
-* `performance.now()` measures monotonic time since document navigation start.
-* `AudioContext.currentTime` measures time elapsed in the audio hardware buffer pipeline.
+If every tab were a separate network participant, three tabs would be three peers flooding the network, and other devices could count a user's tabs. The browser takes part as one participant, its documents share that endpoint, and changes between tabs need no network round trip.
 
-Mapping between the audio hardware clock and system host time is subject to two sources of error:
-1. **Clock drift**: The audio output DAC crystal oscillator runs at a slightly different rate than the CPU host clock.
-2. **Buffer latency**: Audio output buffers introduce a fixed or dynamic delay between when a buffer is scheduled and when sound leaves the speakers.
+### Only one bit about peers
 
-The browser implementation runs continuous clock drift estimation to align `AudioContext.currentTime` with the network timeline. The spec defines the mapping points at the boundary of each captured snapshot.
+`hasPeers` tells a page whether anyone else is in the session. That's all the motivating cases need: "you're playing in time with your setup" or "turn on Link to play along". A count, or anything about which devices are present, would add to fingerprinting and reveal more about the user's network for little benefit. A browser can still show more in its own UI, such as how many devices it is synced with, without exposing it to pages.
 
-### Quantum and Phase
+### Workers and AudioWorklets
 
-Musical sync requires more than identical tempo. It requires alignment on bar boundaries (phase).
+Serious audio engines run in an `AudioWorklet` or a Worker, which can't show a permission prompt or own a session. Rather than exposing the whole API there, `TempoSessionState` is serializable. The main thread captures and posts a snapshot when the timeline changes. The worker or processor schedules from it in its own clock: `currentTime` for a processor of the same context, or the worker's own `performance.now()`. It can post a modified snapshot back for the main thread to commit.
 
-* **Quantum**: The number of beats in a musical cycle or bar. Standard 4/4 time has a quantum of 4. A 3/4 waltz has a quantum of 3.
-* **Phase**: The instantaneous position within the bar, defined as `phase = beat mod quantum`.
-* **Beat realignment**: When a user jumps to a new beat position, `requestBeatAtTime()` shifts the beat grid while maintaining continuous phase alignment with the rest of the network. In contrast, `forceBeatAtTime()` sets an absolute beat position immediately.
+An open question is whether Workers should be able to request sessions directly, given that permission would already have been granted to the document.
+
+### Time base mapping
+
+`captureState(context)` returns times in `context.currentTime`. Without a context, times are in `performance.now()` seconds. The browser maps between these and its host clock. For audio, that means estimating drift between the audio device's clock and the host clock, and output latency. The browser should map to the time at which audio reaches the output, as `AudioContext.getOutputTimestamp()` does, and smooth the estimate.
 
 ### Android
 
@@ -268,64 +268,75 @@ The design is expected to carry over to Chrome on Android. Ableton Link already 
 
 * **Receiving multicast.** Android filters incoming multicast unless the app holds a `WifiManager.MulticastLock`, which needs the `CHANGE_WIFI_MULTICAST_STATE` permission. The browser would take the lock only while at least one tab has an open session, and release it when the last one closes, since holding it costs battery.
 * **Local network permission.** Android is adding a runtime permission for local network access, previewed in Android 16. The browser would need it in addition to the per-origin `"tempo-sync"` prompt this proposal defines, and the two prompts should read as one decision to the user where possible. Chrome's Local Network Access permission for web pages is a related precedent worth aligning with.
-* **Background tabs.** Chrome on Android throttles, freezes and may discard background tabs, and the OS can stop the browser process. A frozen page cannot schedule audio, so a session is only useful while its tab is visible or playing audio. A reasonable rule: the browser stays joined to the Link session while any tab with a session is in the foreground or audible, and leaves it (so `numPeers` elsewhere drops) when none is.
-* **Audio latency.** Output latency is higher on Android and varies more between devices. That makes the `AudioContext` time mapping in `captureState()` (see [Time Base Mapping and Error Sources](#time-base-mapping-and-error-sources)), including the reported output latency, more important on Android than on desktop.
-* **Networks.** Phones are often on networks where Link cannot work: guest Wi-Fi and hotspots with client isolation, or mobile data. Pages should treat `numPeers` of 0 as a normal state and say so, not as an error.
+* **Background tabs.** Chrome on Android throttles, freezes and may discard background tabs, and the OS can stop the browser process. A frozen page cannot schedule audio, so a session is only useful while its tab is visible or playing audio. A reasonable rule: the browser stays joined to the session while any tab with a session is in the foreground or audible, and leaves it when none is.
+* **Audio latency.** Output latency is higher on Android and varies more between devices. That makes the `AudioContext` time mapping in `captureState()`, including the reported output latency, more important on Android than on desktop.
+* **Networks.** Phones are often on networks where local sync cannot work: guest Wi-Fi and hotspots with client isolation, or mobile data. Pages should treat `hasPeers` being false as a normal state and say so, not as an error.
 
 Open question: should the browser keep the session alive briefly after the last tab is backgrounded, so that switching apps mid-performance doesn't drop the device out of the session?
 
-## Considered Alternatives
+## Considered alternatives
 
-### 1. Local Helper Application over WebSocket
+Each of these works for someone today. None of them works without installing something, which rules out the motivating cases.
 
-Many web audio developers currently instruct users to run a native helper application (such as a local Node.js or C++ daemon) that connects to Ableton Link and relays messages over a local WebSocket.
+### 1. A browser extension with a native helper
 
-* **Trade-off**: Requires the user to download, install, and execute unverified native software outside the browser sandbox. This introduces security friction and is impossible on mobile operating systems like iOS or ChromeOS.
+We built this: [an extension and helper](https://github.com/baylesj/tempo-sync/tree/main/extension) that give stable Chrome `navigator.tempoSync`. It plays in time with Live. Timing isn't the problem: the extension estimates the offset between the page's clock and the helper's from the fastest of many pings, and measured a best round trip of 0.3 ms (median about 2 ms), so its error is around a tenth of a millisecond.
 
-### 2. Direct Sockets Multicast
+* **Trade-off**: The user installs a native helper and an extension that can read every site. It can't run on Android, ChromeOS or iOS. An educational site can't ask a learner to do this.
 
-The Direct Sockets API provides UDP socket access, but is restricted to Isolated Web Apps (IWAs).
+### 2. A local helper app over WebSocket
 
-* **Trade-off**: Standard websites cannot use Direct Sockets. Furthermore, requiring every web page to implement the complex Link protocol in JavaScript would result in incompatible implementations and high battery drain.
+The usual approach, and the one Strudel's Link issue proposed: a native or Node.js process joins Link and relays the timeline to the page over `ws://localhost`. A variant needs no new install for Live users: a Max for Live device in Live serving the timeline.
 
-### 3. Exposing MIDI Clock over Web MIDI
+* **Trade-off**: Something must be installed and running. Public sites reaching `localhost` also go through Chrome's Local Network Access prompt. Desktop only.
 
-The Web MIDI API can receive and send MIDI 2.0 or MIDI 1.0 clock bytes.
+### 3. MIDI clock over Web MIDI
 
-* **Trade-off**: MIDI clock is a pulse-based protocol (24 pulses per quarter note) designed for point-to-point cables. It does not provide distributed consensus, does not handle packet loss on wireless networks, and requires external MIDI routing configuration.
+On one machine, Live can send MIDI clock to a virtual MIDI port that a page reads with Web MIDI.
 
-### 4. Page-to-Page WebRTC Sync Protocol
+* **Trade-off**: Tempo and song position only, between two programs, set up by hand. There's no shared phase among several participants, and not every browser supports Web MIDI.
 
-A web-only synchronization protocol could be designed using WebRTC Data Channels and a public signaling server.
+### 4. Direct Sockets in an Isolated Web App
 
-* **Trade-off**: This approach would only sync web browsers with other web browsers. It would fail to interoperate with existing hardware (Ableton Push, MPCs, synthesizers) and DAWs (Ableton Live, Bitwig, Logic Pro) that already speak Ableton Link.
+An Isolated Web App can use Direct Sockets, including multicast, and could run a protocol implementation compiled to WebAssembly.
 
-## Privacy and Security Considerations
+* **Trade-off**: Ordinary websites can't use Direct Sockets, and Isolated Web Apps are hard to distribute to most users today. Every app would also carry its own implementation of the protocol.
 
-### Local Network Presence and Peer Count Leakage
+### 5. A native or desktop app
 
-Ableton Link broadcasts UDP discovery packets on the local subnet. If a web page could freely join a Link session, it could detect whether other Link-enabled devices are active on the local network. The `numPeers` attribute could reveal the presence of studio hardware or specific workstations.
+Wrap the web app in Electron or Tauri, or build a native app, and use Link's library directly.
 
-Mitigations:
-* **Explicit permission prompt**: Joining a session requires user consent via a permission prompt modeled on Local Network Access and Web MIDI.
-* **No network identifiers**: The API does not expose peer IP addresses, port numbers, hostnames, or hardware UUIDs. Only the aggregate count of active peers is visible.
-* **Secure Context required**: The API is restricted to HTTPS (`[SecureContext]`) and top-level browsing contexts.
-* **Permissions Policy**: Embedded iframes cannot access the API unless granted by the `tempo-sync` feature policy.
-* **Single endpoint per profile**: The browser acts as a single participant, preventing fingerprinting of internal tab structures.
-* **Rate limits**: The browser throttles `commitState()` calls to prevent a rogue page from spamming multicast packets or disturbing other musicians on the network.
+* **Trade-off**: It's no longer the web: a download, per-platform builds, and an app store on mobile.
 
-## Stakeholder Feedback
+### 6. A web-only sync protocol over WebRTC
 
-* **Ableton**: Favorable to browser integration of Link. Prototyping explores compatibility with the Link protocol specification.
-* **Mozilla**: Pending review in standards venues.
-* **Chromium**: Active prototype in development behind `--enable-blink-features=TempoSync`.
+Pages could sync with each other through a signaling server.
+
+* **Trade-off**: It only syncs browsers with browsers, not the DAWs, hardware and apps musicians already use.
+
+## Privacy and security considerations
+
+* **Permission.** Joining a session takes a per-origin permission. The prompt should say that the site will be able to tell whether music apps or devices on the network are playing along.
+* **One bit of presence.** Pages learn only `hasPeers`. No counts, addresses, ports or device names.
+* **One participant per browser.** Other devices can't count a user's tabs.
+* **Disruption.** The browser rate-limits shared changes, and beat numbering is local, so a page can't move other people's bar lines except with `forceBeatAtTime()`.
+* **Cross-origin.** Origins with sessions open share one timeline, so cooperating origins could signal through it, as they could through any device on the network. The session isn't an isolation boundary.
+* **Embedding.** Secure contexts only. Iframes need `allow="tempo-sync"`.
+
+## Stakeholder feedback
+
+* **Ableton**: The motivating case is learn.ableton.com.
+* **Strudel**: Its maintainers have wanted Link support since 2023 ([#611](https://github.com/tidalcycles/strudel/issues/611), [#394](https://github.com/tidalcycles/strudel/pull/394), [#719](https://github.com/tidalcycles/strudel/pull/719)), and a contributor is adding an external clock source ([uzu/strudel#2135](https://codeberg.org/uzu/strudel/pulls/2135)). We have not yet asked them about this proposal.
+* **Others we plan to ask**: Hydra, Gibber, Flok and Estuary (live coding); Tone.js and Web Audio Modules (frameworks); Chrome Music Lab (education); web DAW vendors; hardware makers with browser companion apps.
+* **Browser vendors**: Chromium has a prototype behind `--enable-blink-features=TempoSync`. Mozilla and WebKit positions are not yet requested.
+
+See [OBJECTIONS.md](OBJECTIONS.md) for the objections we expect, and our answers.
 
 ## References
 
-* [Ableton Link Protocol and Source Code](https://github.com/Ableton/link)
-* [W3C Web Audio API Specification](https://www.w3.org/TR/webaudio/)
-* [W3C High Resolution Time](https://www.w3.org/TR/hr-time/)
-* [W3C Permissions Policy](https://w3c.github.io/webappsec-permissions-policy/)
-* [Local Network Access Specification](https://wicg.github.io/local-network-access/)
+* [Ableton Link](https://www.ableton.com/link/) and its [source code](https://github.com/Ableton/link)
+* [Web Audio API](https://www.w3.org/TR/webaudio/)
+* [High Resolution Time](https://www.w3.org/TR/hr-time/)
+* [Permissions Policy](https://w3c.github.io/webappsec-permissions-policy/)
+* [Local Network Access](https://wicg.github.io/local-network-access/)
 * [A Tale of Two Clocks: Lookahead Scheduling in Web Audio](https://web.dev/audio-scheduling/)
-

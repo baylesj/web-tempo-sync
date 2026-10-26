@@ -5,7 +5,7 @@ This document answers the questions from the [W3C Self-Review Questionnaire: Sec
 ### 1. What information might this feature expose to Web sites or other parties, and for what purposes is that information exposed?
 
 This feature exposes:
-* The count of active tempo-sync peers on the local area network (`TempoSession.numPeers`).
+* Whether anyone else is taking part in the tempo session (`TempoSession.hasPeers`), as a single boolean.
 * Shared musical timeline metadata (tempo in BPM, beat grid alignment, phase, and start/stop state).
 
 This information is exposed to allow musical web applications to synchronize rhythm and playback with external instruments and software.
@@ -17,7 +17,7 @@ The feature does **not** expose:
 
 ### 2. Do features in this specification expose the minimum amount of information necessary to implement their intended functionality?
 
-Yes. Only the aggregate count of peers and mathematical timing parameters (tempo, beat origin, time origin, and quantum) are exposed to the page.
+Yes. Only whether anyone else is in the session, and the timing parameters (tempo, beat origin, time origin, and quantum) are exposed to the page.
 
 ### 3. How do the features in this specification deal with personal data, personally-identifiable information (PII), or information derived from them?
 
@@ -39,16 +39,16 @@ Because this synchronization requires explicit user permission per origin, secur
 
 ### 7. Does this specification introduce state that could be used for fingerprinting?
 
-The number of active local network peers (`numPeers`) could provide an additional entropy bit indicating whether a user is on a studio network with Link-enabled hardware.
+`hasPeers` is one bit: whether music software or hardware on the user's network, or another site the user has granted the permission, is in the session. It could indicate that a user is on a network with music equipment.
 
 Mitigations:
 * The API requires an explicit permission prompt before any network communication begins.
 * Origins cannot probe for peers silently.
-* The browser exposes only an integer peer count without device details.
+* The browser exposes one bit, not a count, and no device details. It may show more in its own UI.
 
 ### 8. Does this specification expose information about the underlying platform, device, or network to the origins?
 
-The API reveals the presence of other Ableton Link participants on the local area network via the `numPeers` attribute.
+The API reveals whether any other participant (an app or device on the local network, or another document with a session open) is in the tempo session, via the `hasPeers` attribute.
 
 The API does not expose network interface names, subnet masks, local IP addresses, or gateway addresses.
 
