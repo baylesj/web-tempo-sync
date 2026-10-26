@@ -1,5 +1,7 @@
 # Web Tempo Sync API
 
+Part of **Web Tempo Sync**: [spec and explainer](https://github.com/baylesj/web-tempo-sync) · [implementation and extension](https://github.com/baylesj/tempo-sync) · [demo](https://github.com/baylesj/web-tempo-sync-demo) · [all repos](https://github.com/search?q=topic%3Aweb-tempo-sync+user%3Abaylesj&type=repositories)
+
 Web Tempo Sync is an experimental browser API that synchronizes musical tempo, beat grid, phase, and start/stop transport state across local-network peers. It is designed to be compatible with Ableton Link, the open network protocol supported by digital audio workstations (DAWs), hardware synthesizers, and mobile music software.
 
 The browser owns the UDP multicast socket and handles peer discovery and clock synchronization. Web applications interact with a lightweight session object to capture time snapshots, schedule audio events on a shared timeline, or update tempo and transport state.
@@ -10,6 +12,8 @@ This specification is an early draft. It has not yet been adopted by a W3C Worki
 
 An experimental prototype is being developed in Chromium behind the flag:
 `--enable-blink-features=TempoSync`
+
+On stable Chrome, the [extension in tempo-sync](https://github.com/baylesj/tempo-sync/tree/main/extension) provides the API through a small native helper.
 
 ## Documents
 
