@@ -111,7 +111,7 @@ PAGE = """<!doctype html>
     <main>
       <header class="top">
         <div>
-          <span class="kicker">a proposed web API</span>
+          <span class="kicker">Draft proposal for the W3C Audio Community Group</span>
           <a class="mark" href="{landing}">web tempo sync</a>
         </div>
         <button class="theme-toggle" type="button"></button>
