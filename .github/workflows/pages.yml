@@ -1,0 +1,50 @@
+# Builds the spec (index.bs, with Bikeshed) and renders the Markdown docs (explainer, objections,
+# questionnaire) next to it, then publishes them to https://baylesj.github.io/web-tempo-sync/.
+# Pull requests build only, so Bikeshed's fatal errors fail the check.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Bikeshed and Markdown
+        run: pip install bikeshed markdown && bikeshed update
+      - name: Build the spec
+        run: mkdir -p _site && bikeshed --die-on=fatal spec index.bs _site/index.html
+      - name: Render the docs
+        run: >
+          python3 tools/render-md.py . _site web-tempo-sync https://baylesj.github.io/web-tempo-sync-demo/
+          $(ls *.md | grep -v -i -E '^(readme|contributing|license)\.md$')
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
