@@ -119,8 +119,10 @@ Sync aligns output time, not schedule time, so a page with high output latency s
 
 ## Next steps
 
-1. Get public support from Ableton, and from at least two other projects.
-2. Ask Ableton about a published protocol document and a patent statement.
-3. Request Mozilla and WebKit positions.
-4. Publish latency measurements (#15) and decide on a timing target (#7).
-5. Settle the open API questions (#10 and #13).
+Each is tracked as an [issue](https://github.com/baylesj/web-tempo-sync/issues).
+
+1. Get public support from Ableton, and from at least two other projects ([issue #1](https://github.com/baylesj/web-tempo-sync/issues/1), a known blocker).
+2. Ask Ableton about a published protocol document and a patent statement ([#2](https://github.com/baylesj/web-tempo-sync/issues/2)).
+3. Request Mozilla and WebKit positions ([#3](https://github.com/baylesj/web-tempo-sync/issues/3)).
+4. Publish latency measurements (objection 15, [#10](https://github.com/baylesj/web-tempo-sync/issues/10)) and decide on a timing target (objection 7, [#4](https://github.com/baylesj/web-tempo-sync/issues/4)).
+5. Settle the open API questions (objections 10 and 13: [#6](https://github.com/baylesj/web-tempo-sync/issues/6), [#8](https://github.com/baylesj/web-tempo-sync/issues/8)).
