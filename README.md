@@ -8,7 +8,7 @@ The browser owns the UDP multicast socket and handles peer discovery and clock s
 
 ## Status
 
-This specification is an early draft. It has not yet been adopted by a W3C Working Group or Community Group.
+This specification is an early draft, proposed for the [W3C Audio Community Group](https://www.w3.org/community/audio-comgp/). The group has not adopted it yet.
 
 An experimental prototype is being developed in Chromium behind the flag:
 `--enable-blink-features=TempoSync`

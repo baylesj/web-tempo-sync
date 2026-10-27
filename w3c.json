@@ -1,7 +1,7 @@
 {
-  "group": "wicg",
+  "group": [110716],
   "contacts": [
     "baylesj"
-  ]
+  ],
+  "repo-type": "cg-report"
 }
-

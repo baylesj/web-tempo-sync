@@ -11,7 +11,7 @@ Status: **Answered** means the explainer or spec covers it. **Partial** means we
 
 The motivating case is music education at scale (learn.ableton.com). Live coding is a second community with a documented, years-old need: Strudel's Link request ([#611](https://github.com/tidalcycles/strudel/issues/611)), two closed attempts, and an open external-clock PR ([uzu/strudel#2135](https://codeberg.org/uzu/strudel/pulls/2135)). The protocol it builds on is supported by most major DAWs, DJ software, and a lot of hardware and mobile apps, so web pages would join an existing ecosystem rather than start one.
 
-**Status: Partial.** We need developers saying so in public: comments on the WICG proposal or letters from Ableton, live-coding projects, web DAWs, Chrome Music Lab. One stakeholder isn't enough.
+**Status: Partial.** We need developers saying so in public: comments on the Audio Community Group proposal or letters from Ableton, live-coding projects, web DAWs, Chrome Music Lab. One stakeholder isn't enough.
 
 ### 2. "Use an extension, a helper app, or a native wrapper"
 *From: anyone who asks why it has to be in the browser.*

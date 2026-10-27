@@ -3,7 +3,7 @@ Title: Web Tempo Sync
 Shortname: web-tempo-sync
 Level: 1
 Status: CG-DRAFT
-Group: WICG
+Group: audiocg
 ED: https://baylesj.github.io/web-tempo-sync/
 Repository: baylesj/web-tempo-sync
 Editor: Jordan Bayles, Google, baylesj@google.com
@@ -11,6 +11,24 @@ Abstract: This specification defines an API that lets web applications share mus
 Markup Shorthands: markdown yes, idl yes
 Indent: 2
 </pre>
+
+<div boilerplate="status">
+<p>
+  This is a draft proposal for the <a href="https://www.w3.org/community/audio-comgp/">W3C Audio Community Group</a>.
+  The group has not adopted it. It is not a W3C Standard nor is it on the W3C Standards Track.
+
+  Please note that under the
+  <a href="https://www.w3.org/community/about/agreements/cla/">W3C Community Contributor License Agreement (CLA)</a>
+  there is a limited opt-out and other conditions apply.
+
+  Learn more about
+  <a href="https://www.w3.org/community/">W3C Community and Business Groups</a>.
+</p>
+
+<p>
+  Please file feedback as <a href="https://github.com/baylesj/web-tempo-sync/issues">issues on GitHub</a>.
+</p>
+</div>
 
 <style>
   /* Display formulas each get their own line with room around them (consecutive ones otherwise touch). */
