@@ -36,23 +36,22 @@ PAGE = """<!doctype html>
     <title>{title}</title>
     <link rel="icon" type="image/svg+xml" href="{style}/icons/home.svg" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500&family=Schibsted+Grotesk:wght@400..700&family=Fira+Code:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,400..700;1,400&family=Atkinson+Hyperlegible+Mono:wght@400..600&display=swap" />
     <script src="{style}/js/theme.js"></script>
-    <link rel="stylesheet" href="{style}/dist/eopsin.min.css" />
+    <link rel="stylesheet" href="base.css" />
     <style>
-      /* The project's look: bayl.es-style's fonts and syntax-role colour with the demo's signature (purple into
-         pink), and a line naming what this is where the bayl.es sites have their prompt. */
-      body {{ --sig: var(--purple); --sig2: var(--pink); --sig-text: var(--purple); --sig-fill: var(--purple);
-              --sig2-fill: var(--pink); }}
+      /* The project's look, as on the demos: base.css (a W3C/GitHub look in Atkinson Hyperlegible, copied from
+         web-tempo-sync-demo's css/base.css), and a line naming what this is above the title. */
       .top a.mark {{ color: var(--ink); text-decoration: none; }}
-      .kicker {{ display: block; margin: 0 0 10px; color: var(--soft); font: 13px var(--mono); }}
+      .kicker {{ display: block; color: var(--soft); font: 600 13px var(--sans); letter-spacing: 0.04em;
+                 text-transform: uppercase; }}
       /* Three words, so on a phone it shrinks a little and the theme toggle stays beside it. */
-      @media (width <= 480px) {{ .top {{ flex-wrap: nowrap; gap: 12px; }} .top .mark {{ font-size: clamp(30px, 10vw, 44px); }} }}
+      @media (width <= 480px) {{ .top {{ flex-wrap: nowrap; gap: 12px; }} .top .mark {{ font-size: clamp(26px, 8vw, 32px); }} }}
 
       /* Navbar: the spec and its docs, the current one underlined, and the way back to the demos. */
       .docnav {{ display: flex; flex-wrap: wrap; gap: 0 2px; margin: 0 0 28px; border-bottom: 1px solid var(--line); }}
       .docnav a {{ padding: 8px 9px 9px; border-bottom: 2px solid transparent; color: var(--soft);
-                   font: 14px var(--mono); text-decoration: none; }}
+                   font: 500 14px var(--sans); text-decoration: none; }}
       .docnav a:hover {{ color: var(--ink); }}
       .docnav a[aria-current] {{ border-bottom-color: var(--sig-fill); color: var(--ink); }}
       .docnav .home {{ margin-left: auto; }}
@@ -78,7 +77,7 @@ PAGE = """<!doctype html>
 
       /* Contents, for the long pages. */
       article nav.toc {{ margin: 0 0 24px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 8px; }}
-      article nav.toc b {{ display: block; margin: 0 0 6px; color: var(--soft); font: 12px var(--mono);
+      article nav.toc b {{ display: block; margin: 0 0 6px; color: var(--soft); font: 600 12px var(--sans);
                            letter-spacing: 0.06em; text-transform: uppercase; }}
       article nav.toc ul {{ margin: 0; padding-left: 18px; }}
       article nav.toc li + li {{ margin-top: 2px; }}
