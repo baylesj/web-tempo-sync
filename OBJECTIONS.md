@@ -117,6 +117,13 @@ Sync aligns output time, not schedule time, so a page with high output latency s
 
 **Status: Open.** Measure the prototype against Live on desktop and Android, using the demo's latency-measurement mode, and publish the numbers.
 
+### 16. "Why not the Timing Object?"
+*From: Audio CG members who know the Multi-device Timing CG's work, and TAG.*
+
+The [Timing Object](https://www.w3.org/community/reports/webtiming/CG-FINAL-timingobject-20241203/) already shares a moving timeline, and ours is the same motion counted in beats. But its `TimingProvider` is page JavaScript, which can't reach peers on the local network: that capability, not the timing model, is what this proposal adds. It also has no quantum, phase or separate start/stop, its clock is built for media rather than audio output, and the group discontinued it in 2024 without a browser implementation. The two compose: a `TempoSession` can be wrapped as a `TimingProvider` in a few lines, so `timingsrc` video can follow a Link session.
+
+**Status: Answered** (explainer, considered alternative 7). Worth a sentence in the proposal itself, since its fate is the obvious precedent: a timing spec that adds no new capability doesn't get implemented.
+
 ## Next steps
 
 Each is tracked as an [issue](https://github.com/baylesj/web-tempo-sync/issues).

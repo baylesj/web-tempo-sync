@@ -314,6 +314,18 @@ Pages could sync with each other through a signaling server.
 
 * **Trade-off**: It only syncs browsers with browsers, not the DAWs, hardware and apps musicians already use.
 
+### 7. Build on the Timing Object
+
+The Multi-device Timing Community Group's [Timing Object](https://www.w3.org/community/reports/webtiming/CG-FINAL-timingobject-20241203/) is the closest earlier proposal. A `TimingObject` exposes motion along one axis (position, velocity and acceleration at a timestamp), and a `TimingProvider` written in JavaScript keeps it in step with a shared resource, usually an online server. `video.timingsrc = timingObject` drives a media element from it. Our shared timeline is that same model with position counted in beats and velocity as tempo ÷ 60, so the question is fair: why not define a Link `TimingProvider` instead of a new API?
+
+* **A provider can't reach Link.** Providers are page JavaScript, and a page can't discover or talk to peers on the local network. That missing capability is what this proposal adds; the timing model alone needs no browser support, which is why the Timing Object could be written entirely as a library ([timingsrc](https://webtiming.github.io/timingsrc/)) and no browser implemented it.
+* **It has no musical model.** There is no quantum, phase or bar alignment, so a newcomer can't join "on the next bar", and there's no distinction between requesting a beat and forcing one. Pausing sets velocity to zero, which stops the timeline itself, whereas Link's start/stop is separate state and the beat grid keeps running while stopped.
+* **Its clock is for media, not audio.** It uses `performance.now()` with a gradually applied skew, and media elements follow it by nudging playback rate. Scheduling sound needs times in an `AudioContext`'s clock, mapped to when audio reaches the output.
+* **Changes take a round trip.** `update()` is sent to the online resource and applies locally only when the change comes back. Link is peer-to-peer: a change applies at once and is then shared.
+* **It's discontinued.** The group published it as a final report in December 2024 and stopped work, so building on it would mean depending on a specification nobody maintains.
+
+* **Trade-off**: We don't reuse an existing model, and we don't get media element sync for free. The two do compose, though: a few lines of JavaScript can wrap a `TempoSession` as a `TimingProvider` with position in beats, so timingsrc-style video and timed data can follow a Link session's tempo.
+
 ## Privacy and security considerations
 
 * **Permission.** Joining a session takes a per-origin permission. The prompt should say that the site will be able to tell whether music apps or devices on the network are playing along.
@@ -337,6 +349,7 @@ See [OBJECTIONS.md](OBJECTIONS.md) for the objections we expect, and our answers
 * [Ableton Link](https://www.ableton.com/link/) and its [source code](https://github.com/Ableton/link)
 * [Web Audio API](https://www.w3.org/TR/webaudio/)
 * [High Resolution Time](https://www.w3.org/TR/hr-time/)
+* [Timing Object](https://www.w3.org/community/reports/webtiming/CG-FINAL-timingobject-20241203/), Multi-device Timing Community Group final report
 * [Permissions Policy](https://w3c.github.io/webappsec-permissions-policy/)
 * [Local Network Access](https://wicg.github.io/local-network-access/)
 * [A Tale of Two Clocks: Lookahead Scheduling in Web Audio](https://web.dev/audio-scheduling/)
