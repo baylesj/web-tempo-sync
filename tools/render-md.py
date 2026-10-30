@@ -23,7 +23,7 @@ import markdown
 STYLE = "https://cdn.jsdelivr.net/gh/baylesj/bayl.es-style@v1.12.2"
 
 # Navbar order and labels; docs not listed come after, labelled by file name.
-DOC_ORDER = ["explainer", "OBJECTIONS", "security-privacy-questionnaire"]
+DOC_ORDER = ["explainer", "OBJECTIONS", "security-privacy-questionnaire", "slides"]
 DOC_LABEL = {"OBJECTIONS": "objections", "security-privacy-questionnaire": "privacy"}
 # A contents list once a page has this many sections.
 TOC_MIN_SECTIONS = 5
@@ -66,7 +66,7 @@ PAGE = """<!doctype html>
       article li > ul, article li > ol {{ margin: 4px 0 0; }}
       article blockquote {{ padding-left: 14px; border-left: 3px solid var(--line); color: var(--soft); }}
       article hr {{ margin: 28px 0; border: 0; border-top: 1px solid var(--line); }}
-      article img {{ max-width: 100%; }}
+      article img {{ display: block; max-width: 100%; border: 1px solid var(--line); border-radius: 8px; }}
       article :not(pre) > code {{ padding: 1px 5px; border-radius: 4px; background: var(--field);
                                   border: 1px solid var(--line); font-size: 0.85em; }}
 

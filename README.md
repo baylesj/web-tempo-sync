@@ -21,8 +21,9 @@ On stable Chrome, the [extension in tempo-sync](https://github.com/baylesj/tempo
 * [Draft Specification](https://baylesj.github.io/web-tempo-sync/): Source text is in [index.bs](index.bs).
 * [Security and Privacy Questionnaire](security-privacy-questionnaire.md): Responses to the W3C self-review questionnaire.
 * [Objections](OBJECTIONS.md): The objections we expect, who would raise them, and our answers.
+* [Slides (W3C Audio CG, TPAC 2026)](slides.md): 10-slide deck with speaker notes ([PDF](slides/web-tempo-sync-tpac-2026.pdf) · [PPTX](slides/web-tempo-sync-tpac-2026.pptx) · [Google Slides](https://docs.google.com/presentation/d/1OjVssmxwtGPKzwPL4sRhRMNaq9gzNHt8UJW00j3wA0k/edit?usp=sharing)).
 
-Published at https://baylesj.github.io/web-tempo-sync/ (the spec, with the docs rendered beside it as `explainer.html`, `OBJECTIONS.html` and `security-privacy-questionnaire.html`) by `.github/workflows/pages.yml` on every push to `main`. The demos are at https://baylesj.github.io/web-tempo-sync-demo/.
+Published at https://baylesj.github.io/web-tempo-sync/ (the spec, with the docs rendered beside it as `explainer.html`, `OBJECTIONS.html`, `security-privacy-questionnaire.html` and `slides.html`) by `.github/workflows/pages.yml` on every push to `main`. The demos are at https://baylesj.github.io/web-tempo-sync-demo/.
 
 ## Building the Specification Locally
 

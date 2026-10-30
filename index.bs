@@ -27,6 +27,11 @@ Indent: 2
 
 <p>
   Please file feedback as <a href="https://github.com/baylesj/web-tempo-sync/issues">issues on GitHub</a>.
+  Companion documents: <a href="explainer.html">Explainer</a> ·
+  <a href="slides.html">TPAC 2026 Slides</a> (<a href="slides/web-tempo-sync-tpac-2026.pdf">PDF</a>, <a href="slides/web-tempo-sync-tpac-2026.pptx">PPTX</a>) ·
+  <a href="OBJECTIONS.html">Objections</a> ·
+  <a href="security-privacy-questionnaire.html">Security &amp; Privacy</a> ·
+  <a href="https://baylesj.github.io/web-tempo-sync-demo/">Interactive Demo</a>.
 </p>
 </div>
 
